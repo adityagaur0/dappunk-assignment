@@ -1,21 +1,49 @@
+import 'dart:async';
 import 'dart:typed_data';
-import 'package:flutter_audio_capture/flutter_audio_capture.dart';
+import 'package:record/record.dart';
 
 typedef AudioListener = void Function(Float64List buffer);
 typedef AudioErrorListener = void Function(Object error);
 
 class AudioCaptureService {
-  final FlutterAudioCapture _audioCapture = FlutterAudioCapture();
+  final AudioRecorder _recorder = AudioRecorder();
+  StreamSubscription<Amplitude>? _amplitudeSubscription;
 
-  Future<void> initCapture(AudioListener onData, AudioErrorListener onError) async {
-    await _audioCapture.init();
-    await _audioCapture.start(
-      (data) => onData(Float64List.fromList(data.cast<double>())),
-      onError,
-      sampleRate: 44100,
-      bufferSize: 3000,
-    );
+  Future<void> start({
+    required String path,
+    required Function(double) onAmplitude,
+    required Function(dynamic) onError,
+  }) async {
+    try {
+      print("P1: path: $path");
+      await _recorder.start(
+        RecordConfig(
+          encoder: AudioEncoder.aacLc,
+          bitRate: 128000,
+          sampleRate: 44100,
+        ),
+        path: path,
+      );
+
+      _amplitudeSubscription = _recorder.onAmplitudeChanged(const Duration(milliseconds: 100)).listen((amplitude) {
+        onAmplitude(amplitude.current);
+      });
+    } catch (e) {
+      onError(e);
+    }
   }
 
-  Future<void> stopCapture() => _audioCapture.stop();
+  Future<void> stop() async {
+    await _amplitudeSubscription?.cancel();
+    await _recorder.stop();
+  }
+
+  Future<bool> isRecording() async {
+    return await _recorder.isRecording();
+  }
+
+  Future<void> dispose() async {
+    await _amplitudeSubscription?.cancel();
+    await _recorder.dispose();
+  }
 }

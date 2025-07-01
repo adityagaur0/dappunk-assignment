@@ -29,4 +29,18 @@ class TransformService {
 
     return outputPath;
   }
+
+  static Future<String> convertToWav(String inputPath) async {
+    final dir = await getTemporaryDirectory();
+    final outputPath = "${dir.path}/output.wav";
+
+    final command = '-y -i "$inputPath" -acodec pcm_s16le -ar 44100 -ac 1 "$outputPath"';
+    await FFmpegKit.execute(command);
+
+    if (!File(outputPath).existsSync()) {
+      throw Exception('Failed to convert audio.');
+    }
+
+    return outputPath;
+  }
 }

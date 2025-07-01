@@ -1,8 +1,9 @@
-import 'dart:math';
-import 'dart:typed_data';
+// ------- UTILS ------- //
 
-double calculateAmplitude(Float64List buffer) {
-  double sum = buffer.fold(0.0, (p, e) => p + e * e);
-  double rms = sqrt(sum / buffer.length);
-  return rms.clamp(0, 1).toDouble();
+double normalizeAmplitude(double rawAmp) {
+  const minDb = -15; // normal speaking volume
+  const maxDb = -1; // very loud
+
+  double normalized = (rawAmp - minDb) / (maxDb - minDb);
+  return normalized.clamp(0, 1);
 }

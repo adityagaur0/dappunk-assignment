@@ -7,22 +7,29 @@ class WaveformPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final barWidth = size.width / amplitudes.length;
+    if (amplitudes.isEmpty) return;
+
+    final barWidth = size.width / (amplitudes.length * 1.5);
+    final spacing = barWidth * 0.5;
     final paint = Paint()
       ..color = Colors.white
-      ..strokeWidth = barWidth * 0.6
+      ..strokeWidth = barWidth
       ..strokeCap = StrokeCap.round;
 
     for (int i = 0; i < amplitudes.length; i++) {
-      final amp = amplitudes[i];
-      final x = i * barWidth;
+      final amp = amplitudes[i].clamp(0, 1);
+      final x = i * (barWidth + spacing);
       final y = size.height / 2;
-      final barHeight = amp * size.height * 0.8;
-      canvas.drawLine(Offset(x, y - barHeight), Offset(x, y + barHeight), paint);
+      final barHeight = amp * size.height * 0.4;
+
+      canvas.drawLine(
+        Offset(x, y - barHeight),
+        Offset(x, y + barHeight),
+        paint,
+      );
     }
   }
 
-  //
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }

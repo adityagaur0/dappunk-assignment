@@ -24,24 +24,34 @@ class AudioBloc extends Cubit<AudioState> {
 
   AudioBloc(this._audioService) : super(const AudioInitial());
 
-  Future<void> startListening() async {
+  Future<void> startRecording(String path) async {
     List<double> _waveform = [];
+
     try {
-      await _audioService.initCapture(
-        (buffer) {
-          final amp = calculateAmplitude(buffer);
+      await _audioService.start(
+        path: path,
+        onAmplitude: (rawamp) {
+          final amp = normalizeAmplitude(rawamp);
           _waveform.add(amp);
-          if (_waveform.length > 60) _waveform.removeAt(0); // max 60 bars
+          if (_waveform.length > 60) _waveform.removeAt(0);
           emit(AudioUpdated(amp, List.of(_waveform)));
         },
-        (error) => print('Error: $error'),
+        onError: (error) => print('Error: $error'),
       );
     } catch (e) {
-      print("Failed to start audio capture: $e");
+      print("Failed to start recording: $e");
     }
   }
 
-  Future<void> stopListening() async {
-    await _audioService.stopCapture();
+  Future<void> stopRecording() async {
+    await _audioService.stop();
+  }
+
+  Future<bool> isRecording() async {
+    return _audioService.isRecording();
+  }
+
+  Future<void> dispose() async {
+    await _audioService.dispose();
   }
 }

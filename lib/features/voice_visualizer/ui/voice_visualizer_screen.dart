@@ -1,7 +1,7 @@
 import 'dart:io';
 
+import 'package:android_intent_plus/android_intent.dart';
 import 'package:audio_waveforms/audio_waveforms.dart';
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -14,7 +14,6 @@ import '../../../services/audio_capture_service.dart';
 import '../../../services/transform_service.dart';
 import '../../../shared/constants/colors.dart';
 import '../../../shared/widgets/waveform_painter.dart';
-import 'package:record/record.dart';
 
 import '../widgets/button.dart';
 
@@ -30,34 +29,25 @@ class VoiceVisualizerScreen extends HookWidget {
     final isTransforming = useState(false);
     final audioFilePath = useState<String?>(null);
     final transformedAudioFilePath = useState<String?>(null);
-    final record = useMemoized(() => AudioRecorder());
-    final audioPlayer = useMemoized(() => AudioPlayer());
     final selectedEffect = useState<String?>('male');
     final playerController = useMemoized(() => PlayerController());
     final shortestSide = MediaQuery.of(context).size.shortestSide;
 
     useEffect(() {
-      return audioBloc.stopListening;
+      return audioBloc.stopRecording;
     }, []);
 
     Future<void> play(String path) async {
       final file = File(path);
       if (!await file.exists()) {
-        debugPrint('File does not exist: $path');
         return;
       }
 
-      await audioPlayer.stop();
-      debugPrint('Playing file: $path');
+      await playerController.stopPlayer();
       await playerController.preparePlayer(path: path);
       await playerController.startPlayer();
-      await audioPlayer.play(DeviceFileSource(path));
     }
 
-    // Future<void> play(String path) async {
-    //   await audioPlayer.stop();
-    //   await audioPlayer.play(DeviceFileSource(path));
-    // }
     useEffect(() {
       return () {
         playerController.dispose();
@@ -101,27 +91,15 @@ class VoiceVisualizerScreen extends HookWidget {
                   onPressed: () async {
                     if (isRecording.value) {
                       isRecording.value = false;
-                      // audioBloc.stopListening();
-                      await record.stop();
-                      audioBloc.stopListening();
+                      await audioBloc.stopRecording();
                     } else {
-                      await audioPlayer.stop();
-                      isRecording.value = true;
-                      // audioBloc.startListening();
+                      isTransformed.value = false;
+                      await playerController.stopPlayer();
                       final dir = await getApplicationDocumentsDirectory();
-                      // final filePath = "${dir.path}/voice_${DateTime.now().millisecondsSinceEpoch}.";
                       final filePath = '${dir.path}/voice_${DateTime.now().millisecondsSinceEpoch}.aac';
                       audioFilePath.value = filePath;
-                      await record.start(
-                        RecordConfig(
-                          encoder: AudioEncoder.aacLc,
-                          bitRate: 128000,
-                          sampleRate: 44100,
-                        ),
-                        path: filePath,
-                      );
-                      audioBloc.startListening();
-                      isTransformed.value = false;
+                      await audioBloc.startRecording(filePath);
+                      isRecording.value = true;
                     }
                   },
                 ),
@@ -140,7 +118,7 @@ class VoiceVisualizerScreen extends HookWidget {
                     onChanged: (value) => selectedEffect.value = value,
                   ),
                   const SizedBox(height: 12),
-                  ElevatedButton(
+                  BWButton(
                     onPressed: () async {
                       if (audioFilePath.value == null || selectedEffect.value == null) {
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -157,13 +135,13 @@ class VoiceVisualizerScreen extends HookWidget {
                         transformedAudioFilePath.value = newFilePath;
                         isTransformed.value = true;
                       } catch (e) {
-                        debugPrint("Transform failed: $e");
                         isTransformed.value = false;
                       } finally {
                         isTransforming.value = false;
                       }
                     },
-                    child: const Text("Transform Audio"),
+                    icon: Icons.audiotrack,
+                    label: "Transform Audio",
                   ),
                 ],
                 if (isTransforming.value) const SpinKitWave(color: Colors.white, size: 40),
@@ -209,7 +187,35 @@ class VoiceVisualizerScreen extends HookWidget {
                                       await handleTransformedAudioShareOrDownload(path);
                                       if (Platform.isAndroid) {
                                         ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(content: Text('Saved to Downloads')),
+                                          SnackBar(
+                                            content: Row(
+                                              children: [
+                                                const Expanded(
+                                                  child: Text("Saved to Downloads"),
+                                                ),
+                                                TextButton(
+                                                  onPressed: () async {
+                                                    final intent = AndroidIntent(
+                                                      action: 'android.intent.action.VIEW',
+                                                      data: 'content://com.android.externalstorage.documents/document/primary:Download',
+                                                    );
+
+                                                    try {
+                                                      await intent.launch();
+                                                    } catch (e) {
+                                                      debugPrint("Failed to open Downloads: $e");
+                                                    }
+                                                  },
+                                                  style: TextButton.styleFrom(
+                                                    foregroundColor: Colors.white,
+                                                  ),
+                                                  child: const Text("OPEN"),
+                                                ),
+                                              ],
+                                            ),
+                                            behavior: SnackBarBehavior.floating,
+                                            backgroundColor: Colors.grey[800],
+                                          ),
                                         );
                                       }
                                     } catch (e) {
@@ -226,21 +232,22 @@ class VoiceVisualizerScreen extends HookWidget {
                       ),
                       const SizedBox(height: 10),
                       Container(
-                          height: 80,
-                          width: MediaQuery.of(context).size.width,
-                          margin: const EdgeInsets.symmetric(horizontal: 16),
-                          child: AudioFileWaveforms(
-                            size: Size(shortestSide * 0.9, 70),
-                            playerController: playerController,
-                            enableSeekGesture: true,
-                            waveformType: WaveformType.fitWidth,
-                            playerWaveStyle: const PlayerWaveStyle(
-                              fixedWaveColor: Colors.white38,
-                              liveWaveColor: Colors.white,
-                              spacing: 6,
-                              showSeekLine: true,
-                            ),
-                          ))
+                        height: 80,
+                        width: MediaQuery.of(context).size.width,
+                        margin: const EdgeInsets.symmetric(horizontal: 16),
+                        child: AudioFileWaveforms(
+                          size: Size(shortestSide * 0.9, 70),
+                          playerController: playerController,
+                          enableSeekGesture: true,
+                          waveformType: WaveformType.long,
+                          playerWaveStyle: const PlayerWaveStyle(
+                            fixedWaveColor: Colors.white38,
+                            liveWaveColor: Colors.white,
+                            spacing: 6,
+                            // showSeekLine: true,
+                          ),
+                        ),
+                      ),
                     ],
                   )
               ],
