@@ -46,6 +46,7 @@ https://github.com/user-attachments/assets/b385cf21-bf50-4d99-8c5b-7d5fc064aa4c
     - widgets/
       - blob_painter.dart
       - waveform_painter.dart
+
 --
 # Package Used:
   - cupertino_icons: ^1.0.8
