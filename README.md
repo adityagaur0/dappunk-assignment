@@ -6,7 +6,6 @@ A Flutter-Based Local Audio Transformer — this project allows users to perform
 
 ---
 
-<details><summary>Recording(ANDROID/IOS)</summary>
 
 ### ANDROID
 
@@ -17,7 +16,6 @@ https://github.com/user-attachments/assets/c1cc1010-9c06-466b-a127-80497bd49ef4
 https://github.com/user-attachments/assets/b385cf21-bf50-4d99-8c5b-7d5fc064aa4c
 
 
-</details> 
 
 ---
 # Folder Structure
