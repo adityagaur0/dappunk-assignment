@@ -105,8 +105,10 @@ Output file stored → available for playback/export
    ↓
 iOS → Share via share_plus
 Android → Save to Downloads folder
+```
 
 ---
+
 # Aduio Bloc
 `Future<void> startRecording(String path)`
 - Starts microphone using AudioCaptureService
