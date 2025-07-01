@@ -4,6 +4,12 @@
 <dict>
 	<key>NSMicrophoneUsageDescription</key>
     <string>This app uses your mic to visualize your voice.</string>
+    <key>NSAppleMusicUsageDescription</key>
+    <string>We need access to play audio</string>
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>audio</string>
+    </array>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
