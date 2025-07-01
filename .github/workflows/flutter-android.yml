@@ -1,0 +1,46 @@
+name: Flutter Android Build
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Flutter (official)
+        uses: flutter-actions/setup-flutter@v2
+        with:
+          flutter-version: '3.22.1'
+
+      - name: Check Flutter and Dart versions
+        run: |
+          flutter --version
+          dart --version
+
+      - name: Clean corrupted Gradle wrapper (if exists)
+        run: rm -rf ~/.gradle/wrapper
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Clean corrupted Gradle wrapper files
+        run: |
+          rm -rf ~/.gradle/wrapper
+          rm -rf android/gradle/wrapper/gradle-wrapper.jar
+          rm -rf android/gradle/wrapper/gradle-wrapper.properties
+          rm -rf android/gradlew
+          rm -rf android/gradlew.bat
+
+      - name: Build APK
+        run: flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
