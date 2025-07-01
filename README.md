@@ -115,3 +115,20 @@ Android → Save to Downloads folder
 - Captures amplitude every 100ms
 - Emits AudioUpdated with amplitude & waveform
 - Maintains only the last 60 values
+
+---
+
+# AudioCaptureService
+`AudioRecorder _recorder = AudioRecorder();`
+
+Uses record package to:
+- Start/stop recording to .aac
+- Subscribe to amplitude updates via stream
+
+---
+
+# WaveformPainter
+
+- Paints bars for each amplitude on a Canvas
+- Bar height proportional to amplitude
+- Adjusts spacing and strokeWidth dynamically
