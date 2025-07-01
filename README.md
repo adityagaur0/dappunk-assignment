@@ -116,7 +116,6 @@ Android → Save to Downloads folder
 - Emits AudioUpdated with amplitude & waveform
 - Maintains only the last 60 values
 
----
 
 # AudioCaptureService
 `AudioRecorder _recorder = AudioRecorder();`
@@ -125,10 +124,45 @@ Uses record package to:
 - Start/stop recording to .aac
 - Subscribe to amplitude updates via stream
 
----
 
 # WaveformPainter
 
 - Paints bars for each amplitude on a Canvas
 - Bar height proportional to amplitude
 - Adjusts spacing and strokeWidth dynamically
+
+# TransformService
+
+`transformAac({ inputPath, effect })`
+
+- Uses FFmpegKit to apply transformations:
+
+| Effect      | Filter Applied                          |
+| ----------- | --------------------------------------- |
+| male        | `asetrate=44100*0.8,atempo=1.25`        |
+| female      | `asetrate=44100*1.2,atempo=0.83`        |
+| child       | `asetrate=44100*1.4,atempo=0.71`        |
+| robot       | `afftfilt=real='hypot(re,im)':imag='0'` |
+| deep        | `asetrate=44100*0.6,atempo=1.66`        |
+| high\_pitch | `asetrate=44100*1.5,atempo=0.67`        |
+
+- Outputs an .aac file in the temporary directory
+
+# File Export
+
+`handleTransformedAudioShareOrDownload(path)`
+iOS:
+- Shares via share_plus
+
+Android:
+- Requests appropriate storage permissions (based on SDK version)
+- Copies file to /storage/emulated/0/Download
+
+#  Permission Handling
+
+`useAudioPermission()`
+
+- Hook-based mic permission request
+- On permanent denial, opens app settings
+
+
