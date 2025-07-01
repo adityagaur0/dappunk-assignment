@@ -61,3 +61,55 @@ https://github.com/user-attachments/assets/b385cf21-bf50-4d99-8c5b-7d5fc064aa4c
   - audio_waveforms: ^1.3.0
   - device_info_plus: ^11.3.0
   android_intent_plus: ^5.3.0
+
+---
+##  Modules Overview
+
+| Module | Responsibility |
+|--------|----------------|
+| `AudioBloc` | Manages recording state & waveform updates |
+| `AudioCaptureService` | Interfaces with microphone input using `record` |
+| `WaveformPainter` | Renders real-time waveform visuals |
+| `TransformService` | Applies FFmpeg audio effects (pitch/speed) |
+| `handleTransformedAudioShareOrDownload` | Exports audio to Downloads (Android) or shares (iOS) |
+| `useAudioPermission` | Requests microphone permission on widget load |
+
+---
+
+## 🔁 Data Flow
+
+```plaintext
+[User taps Record]
+   ↓
+AudioBloc.startRecording()
+   ↓
+AudioCaptureService.start() starts microphone & amplitude listener
+   ↓
+Amplitude values every 100ms → normalizeAmplitude()
+   ↓
+Emit AudioUpdated(amplitude, waveform)
+   ↓
+WaveformPainter renders live waveform
+
+[User taps Stop]
+   ↓
+AudioBloc.stopRecording()
+
+[User selects effect + taps Transform]
+   ↓
+TransformService.transformAac(path, effect)
+   ↓
+Output file stored → available for playback/export
+
+[User taps Export]
+   ↓
+iOS → Share via share_plus
+Android → Save to Downloads folder
+
+---
+# Aduio Bloc
+`Future<void> startRecording(String path)`
+- Starts microphone using AudioCaptureService
+- Captures amplitude every 100ms
+- Emits AudioUpdated with amplitude & waveform
+- Maintains only the last 60 values
