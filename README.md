@@ -109,7 +109,7 @@ Android → Save to Downloads folder
 
 ---
 
-# Aduio Bloc
+# Audio Bloc
 `Future<void> startRecording(String path)`
 - Starts microphone using AudioCaptureService
 - Captures amplitude every 100ms
